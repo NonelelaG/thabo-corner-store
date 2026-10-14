@@ -1,0 +1,25 @@
+# --- Virtual environment (never commit this) ---
+venv/
+.venv/
+env/
+
+# --- Python cache ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Database side files ---
+*.db-journal
+*.db-wal
+
+# --- Password hash (regenerate locally) ---
+password.hash
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db
+
+# --- Editor junk ---
+.vscode/
+.idea/
