@@ -43,10 +43,9 @@ def load_raw_data(products_path: str, sales_path: str):
     Returns:
         (products_df, sales_df) tuple of pandas DataFrames, UNCLEANED.
     """
-    # TODO:
-    #   1. Use pd.read_csv() to load both files.
-    #   2. Return them as a tuple: (products_df, sales_df)
-    raise NotImplementedError
+    products_df = pd.read_csv(products_path)
+    sales_df = pd.read_csv(sales_path)
+    return products_df, sales_df
 
 
 def clean_products(products_df: "pd.DataFrame") -> "pd.DataFrame":
