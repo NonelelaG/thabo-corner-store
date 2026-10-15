@@ -64,8 +64,37 @@ def clean_products(products_df: "pd.DataFrame") -> "pd.DataFrame":
     Returns:
         A cleaned copy of the DataFrame. Do not modify products_df in place.
     """
-    # TODO: implement the cleaning steps described above.
-    raise NotImplementedError
+        # ---- 1. Make a copy so we don't mutate the caller's DataFrame ----
+    df = products_df.copy()
+
+    # ---- 2. Drop exact duplicate rows ----
+    # keep='first' keeps the first occurrence and removes later copies.
+    df = df.drop_duplicates(keep="first")
+
+    # ---- 3. Strip whitespace from text columns ----
+    # Leading/trailing spaces make 'Beverages ' look different from 'Beverages'.
+    for col in ["product_name", "category"]:
+        df[col] = df[col].astype(str).str.strip()
+
+    # ---- 4. Standardise category to Title Case ----
+    # 'beverages', 'BEVERAGES' and 'Beverages' all become 'Beverages'.
+    df["category"] = df["category"].str.title()
+
+    # ---- 5. Drop rows where product_name is missing ----
+    # A product with no name cannot be reported on or displayed in a chart.
+    df = df[df["product_name"].notna()]
+    df = df[df["product_name"] != ""]
+    df = df[df["product_name"].str.lower() != "nan"]
+
+    # ---- 6. Drop rows where unit_price is missing ----
+    # Revenue is quantity * unit_price. Without a price we cannot
+    # compute revenue, so this row is unusable for our analysis.
+    df = df[df["unit_price"].notna()]
+
+    # ---- 7. Reset the index so row numbers look clean ----
+    df = df.reset_index(drop=True)
+
+    return df
 
 
 def clean_sales(sales_df: "pd.DataFrame", valid_product_ids) -> "pd.DataFrame":
