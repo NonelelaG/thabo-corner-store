@@ -130,42 +130,70 @@ def query_total_revenue_per_product(conn: sqlite3.Connection):
 def query_best_selling_product(conn: sqlite3.Connection):
     """
     Return the single product with the highest total quantity sold.
-
-    TODO: SUM(quantity) grouped by product, ORDER BY that sum DESC, LIMIT 1.
     """
     sql = """
-    -- TODO
+        SELECT p.product_name,
+               SUM(s.quantity) AS total_units
+        FROM sales s
+        JOIN products p ON p.product_id = s.product_id
+        GROUP BY p.product_id, p.product_name
+        ORDER BY total_units DESC
+        LIMIT 1
     """
-    raise NotImplementedError
+    return conn.execute(sql).fetchall()
 
 
 def query_sales_by_payment_method(conn: sqlite3.Connection):
     """
     Return the number of sales transactions per payment_method.
-
-    TODO: COUNT(*) grouped by payment_method.
     """
     sql = """
-    -- TODO
+        SELECT payment_method,
+               COUNT(*) AS num_transactions
+        FROM sales
+        GROUP BY payment_method
+        ORDER BY num_transactions DESC
     """
-    raise NotImplementedError
+    return conn.execute(sql).fetchall()
 
 
 def query_custom_one(conn: sqlite3.Connection):
     """
-    Your own SQL query #1. Pick a business question that interests you,
-    e.g. "Which category earns the most revenue?" or "How many sales
-    were made to Regular customers vs Walk-in customers?"
+    Business question: which product category earns the most revenue?
 
-    Document the question you chose as the docstring above your SQL.
+    Joins sales to products, multiplies quantity by unit_price per
+    row, groups by category, and orders categories by total revenue.
+    This tells Thabo which section of his shop is actually paying
+    the bills.
     """
-    raise NotImplementedError
+    sql = """
+        SELECT p.category,
+               SUM(s.quantity * p.unit_price) AS category_revenue,
+               COUNT(*) AS num_sales
+        FROM sales s
+        JOIN products p ON p.product_id = s.product_id
+        GROUP BY p.category
+        ORDER BY category_revenue DESC
+    """
+    return conn.execute(sql).fetchall()
 
 
 def query_custom_two(conn: sqlite3.Connection):
     """
-    Your own SQL query #2. Choose a different type of question from
-    query_custom_one (e.g. use a WHERE filter, or a date range,
-    or a HAVING clause).
+    Business question: do Regular customers buy more units per basket
+    than Walk-in customers?
+
+    Uses a WHERE filter to exclude Unknown customer types, then
+    AVG() to compare the two groups. Helps Thabo decide whether a
+    loyalty programme for Regulars would be worth the effort.
     """
-    raise NotImplementedError
+    sql = """
+        SELECT customer_type,
+               COUNT(*) AS num_transactions,
+               AVG(quantity) AS avg_units_per_basket
+        FROM sales
+        WHERE customer_type != 'Unknown'
+        GROUP BY customer_type
+        ORDER BY avg_units_per_basket DESC
+    """
+    return conn.execute(sql).fetchall()
