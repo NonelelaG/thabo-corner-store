@@ -27,8 +27,7 @@ def get_connection(db_path: str = "store.db") -> sqlite3.Connection:
     Returns:
         an open sqlite3.Connection
     """
-    # TODO: return sqlite3.connect(db_path)
-    raise NotImplementedError
+    return sqlite3.connect(db_path)
 
 
 def create_tables(conn: sqlite3.Connection) -> None:
@@ -51,13 +50,31 @@ def create_tables(conn: sqlite3.Connection) -> None:
         - sale_date      TEXT   (store as 'YYYY-MM-DD')
         - payment_method TEXT
         - customer_type  TEXT
+        """
 
-    TODO:
-        Write two CREATE TABLE IF NOT EXISTS statements (one per table)
-        and execute them using conn.execute(...). Remember to call
-        conn.commit() at the end.
-    """
-    raise NotImplementedError
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS products (
+            product_id   TEXT PRIMARY KEY,
+            product_name TEXT NOT NULL,
+            category     TEXT,
+         unit_price   REAL,
+            in_stock     INTEGER
+        );
+    """)
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS sales (
+            sale_id        TEXT PRIMARY KEY,
+            product_id     TEXT,
+            quantity       INTEGER,
+            sale_date      TEXT,
+            payment_method TEXT,
+            customer_type  TEXT,
+            FOREIGN KEY (product_id) REFERENCES products(product_id)
+        );
+    """)
+
+    conn.commit()
 
 
 def insert_products(conn: sqlite3.Connection, products_df) -> None:
@@ -65,21 +82,26 @@ def insert_products(conn: sqlite3.Connection, products_df) -> None:
     Insert every row of the cleaned products DataFrame into the
     products table.
 
-    TODO:
-        Loop through products_df.itertuples() (or use
-        products_df.to_sql("products", conn, if_exists="append", index=False))
-        and insert each row. Remember conn.commit().
     """
-    raise NotImplementedError
+
+    # Clear the table first so re-running main.py doesn't duplicate rows.
+    conn.execute("DELETE FROM products;")
+
+    # pandas writes all rows in one efficient batch.
+    products_df.to_sql("products", conn, if_exists="append", index=False)
+
+    conn.commit()
 
 
 def insert_sales(conn: sqlite3.Connection, sales_df) -> None:
     """
     Insert every row of the cleaned sales DataFrame into the sales table.
-
-    TODO: same approach as insert_products().
     """
-    raise NotImplementedError
+
+    # Clear the table first so re-running main.py doesn't duplicate rows.
+    conn.execute("DELETE FROM sales;")
+    sales_df.to_sql("sales", conn, if_exists="append", index=False)
+    conn.commit()
 
 
 # ---------------------------------------------------------------------
