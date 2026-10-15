@@ -24,7 +24,7 @@ import getpass
 # For this project, one hardcoded hash is fine — but note in your
 # README why storing it in the database (KM-04 idea) would be better
 # than hardcoding it here.
-STORED_PASSWORD_HASH = None  # TODO: set this using hash_password() below
+STORED_PASSWORD_HASH = "303aab129dfebb892308f9419b69ba84fc5bddac3873066bbcf1b2b2c30fc842"  # TODO: set this using hash_password() below
 
 
 def hash_password(plain_text_password: str) -> str:
@@ -39,10 +39,8 @@ def hash_password(plain_text_password: str) -> str:
     Returns:
         the hex-digest string of the SHA-256 hash
 
-    TODO:
-        return hashlib.sha256(plain_text_password.encode()).hexdigest()
     """
-    raise NotImplementedError
+    return hashlib.sha256(plain_text_password.encode()).hexdigest()
 
 
 def check_password(attempt: str, stored_hash: str) -> bool:
@@ -57,10 +55,9 @@ def check_password(attempt: str, stored_hash: str) -> bool:
     Returns:
         True if the attempt's hash matches stored_hash, False otherwise
 
-    TODO:
-        return hash_password(attempt) == stored_hash
+    
     """
-    raise NotImplementedError
+    return hash_password(attempt) == stored_hash
 
 
 def login_gate(stored_hash: str, max_attempts: int = 3) -> bool:
@@ -83,7 +80,15 @@ def login_gate(stored_hash: str, max_attempts: int = 3) -> bool:
         print("Access denied — too many failed attempts.")
         return False
     """
-    raise NotImplementedError
+    for attempt_number in range(max_attempts):
+        attempt = getpass.getpass("Enter password to view reports: ")
+        if check_password(attempt, stored_hash):
+            print("Access granted.")
+            return True
+        else:
+            print(f"Incorrect password. {max_attempts - attempt_number - 1} attempts left.")
+    print("Access denied — too many failed attempts.")
+    return False
 
 
 # ---------------------------------------------------------------------

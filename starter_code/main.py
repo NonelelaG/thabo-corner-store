@@ -39,8 +39,8 @@ def main():
     # hash (e.g. security.hash_password("letmein")), uncomment this
     # block so reports require a password before they are shown.
     #
-    # if not security.login_gate(security.STORED_PASSWORD_HASH):
-    #     return
+    if not security.login_gate(security.STORED_PASSWORD_HASH):
+        return
 
     # ---- Task 2: load & clean data ----------------------------------
     print("\n[1/5] Loading raw data...")
