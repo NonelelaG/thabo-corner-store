@@ -115,15 +115,16 @@ def query_total_revenue_per_product(conn: sqlite3.Connection):
     Return each product's name and its total revenue
     (quantity * unit_price, summed across all its sales),
     highest revenue first.
-
-    TODO: write a SQL query that JOINS sales to products on product_id,
-    multiplies quantity * unit_price, and uses SUM() with GROUP BY.
-    Execute it with conn.execute(sql) and return conn.execute(sql).fetchall()
     """
     sql = """
-    -- TODO: write your JOIN + GROUP BY + SUM query here
+        SELECT p.product_name,
+               SUM(s.quantity * p.unit_price) AS total_revenue
+        FROM sales s
+        JOIN products p ON p.product_id = s.product_id
+        GROUP BY p.product_id, p.product_name
+        ORDER BY total_revenue DESC
     """
-    raise NotImplementedError
+    return conn.execute(sql).fetchall()
 
 
 def query_best_selling_product(conn: sqlite3.Connection):
