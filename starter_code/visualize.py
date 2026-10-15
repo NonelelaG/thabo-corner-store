@@ -39,7 +39,16 @@ def bar_chart_revenue_per_product(product_names: list, revenues: list, save_path
         plt.savefig(save_path)
         plt.close()
     """
-    raise NotImplementedError
+    plt.figure(figsize=(10, 6))
+    plt.bar(product_names, revenues, color="#2a7db5")
+    plt.xticks(rotation=45, ha="right")
+    plt.ylabel("Revenue (R)")
+    plt.xlabel("Product")
+    plt.title("Total Revenue per Product — Thabo's Corner Store")
+    plt.grid(axis="y", linestyle="--", alpha=0.5)
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=120)
+    plt.close()
 
 
 def line_chart_monthly_trend(monthly_trend: dict, save_path: str = "monthly_trend.png"):
@@ -62,4 +71,20 @@ def line_chart_monthly_trend(monthly_trend: dict, save_path: str = "monthly_tren
         plt.savefig(save_path)
         plt.close()
     """
-    raise NotImplementedError
+    months = list(monthly_trend.keys())
+    totals = list(monthly_trend.values())
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(months, totals, marker="o", color="#c0392b", linewidth=2)
+    plt.xlabel("Month")
+    plt.ylabel("Units Sold")
+    plt.title("Monthly Sales Trend — Thabo's Corner Store")
+    plt.grid(linestyle="--", alpha=0.5)
+
+    # Annotate each point with its value so the chart is self-explanatory.
+    for x, y in zip(months, totals):
+        plt.text(x, y, str(y), ha="center", va="bottom", fontsize=9)
+
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=120)
+    plt.close()
