@@ -124,8 +124,80 @@ def clean_sales(sales_df: "pd.DataFrame", valid_product_ids) -> "pd.DataFrame":
         column (as a string in YYYY-MM-DD format) and no missing values
         in quantity or product_id.
     """
-    # TODO: implement the cleaning steps described above.
-    raise NotImplementedError
+        # ---- 1. Copy so we don't modify the caller's DataFrame ----
+    df = sales_df.copy()
+
+    # ---- 2. Drop exact duplicate rows ----
+    df = df.drop_duplicates(keep="first")
+
+    # ---- 3. Strip whitespace from text columns ----
+    for col in ["sale_id", "product_id", "payment_method", "customer_type"]:
+        df[col] = df[col].astype(str).str.strip()
+
+    # ---- 4. Drop sales that reference a product that doesn't exist ----
+    # These "orphan" product_ids can't be joined to the products table,
+    # so they would break every revenue query. Better to remove them.
+    df = df[df["product_id"].isin(valid_product_ids)]
+
+    # ---- 5. Drop rows where quantity is missing ----
+    # Revenue = quantity * unit_price. Without a quantity the sale is
+    # unanalysable, so we drop the row.
+    df = df[df["quantity"].notna()]
+
+    # ---- 6. Standardise sale_date to YYYY-MM-DD ----
+    # The raw data has several different formats. We try each known
+    # format one at a time (in order) and keep the first one that
+    # succeeds. Anything that can't be parsed becomes NaT and is
+    # dropped in step 7.
+    #
+    # We do NOT use pandas' automatic date parsing, because a value
+    # like 02/01/2026 is ambiguous — pandas might read it as Feb 1
+    # when we mean 2 January. Being explicit avoids silent errors.
+    known_formats = [
+        "%Y-%m-%d",   # 2026-01-01
+        "%d/%m/%Y",   # 02/01/2026  (DD/MM/YYYY)
+        "%Y/%m/%d",   # 2026/01/03
+        "%d-%m-%Y",   # 05-01-2026
+        "%d %B %Y",   # 15 January 2026
+    ]
+
+    def parse_date(value):
+        """Try each known format; return a Timestamp or NaT."""
+        if pd.isna(value):
+            return pd.NaT
+        text = str(value).strip()
+        for fmt in known_formats:
+            try:
+                return pd.to_datetime(text, format=fmt)
+            except (ValueError, TypeError):
+                continue
+        return pd.NaT
+
+    df["sale_date"] = df["sale_date"].apply(parse_date)
+
+    # ---- 7. Drop rows with an unparseable or missing date ----
+    df = df[df["sale_date"].notna()]
+
+    # ---- 8. Convert the date column to YYYY-MM-DD strings ----
+    # Storing as text in SQLite is simple and sorts correctly.
+    df["sale_date"] = df["sale_date"].dt.strftime("%Y-%m-%d")
+
+    # ---- 9. Fill missing payment_method with "Unknown" ----
+    # We do NOT guess a method — pretending a sale was cash when we
+    # don't know is worse than admitting we don't know.
+    df["payment_method"] = df["payment_method"].replace("nan", pd.NA)
+    df["payment_method"] = df["payment_method"].fillna("Unknown")
+
+    # ---- 10. Fill missing customer_type with "Unknown" ----
+    # This is an optional field, so "Unknown" is honest.
+    df["customer_type"] = df["customer_type"].replace("nan", pd.NA)
+    df["customer_type"] = df["customer_type"].fillna("Unknown")
+
+    # ---- 11. Tidy up: integer quantity, fresh index ----
+    df["quantity"] = df["quantity"].astype(int)
+    df = df.reset_index(drop=True)
+
+    return df
 
 
 def cleaning_summary(raw_df: "pd.DataFrame", clean_df: "pd.DataFrame", name: str) -> str:
@@ -137,5 +209,12 @@ def cleaning_summary(raw_df: "pd.DataFrame", clean_df: "pd.DataFrame", name: str
     Example output:
         "products: 16 raw rows -> 14 clean rows (2 removed)"
     """
-    # TODO: compare len(raw_df) and len(clean_df) and format a message.
-    raise NotImplementedError
+    raw_count = len(raw_df)
+    clean_count = len(clean_df)
+    removed = raw_count - clean_count
+    pct = (removed / raw_count * 100) if raw_count else 0
+
+    return (
+        f"{name}: {raw_count} raw rows -> {clean_count} clean rows "
+        f"({removed} removed, {pct:.1f}%)"
+    )
